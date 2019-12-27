@@ -7,3 +7,6 @@ Dependencies |
 ------------ |
 [NFC Mifare Classic SPI](https://github.com/mcvangelder/arduino-libraries/tree/develop/NFC-MiFareClassic-Spi)|
 [State Machine](https://github.com/mcvangelder/arduino-libraries/tree/develop/StateMachine)|
+
+_Note:_
+This is a work in progress, feel free to follow the project to get updates on its progress.
