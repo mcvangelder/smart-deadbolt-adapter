@@ -17,11 +17,11 @@ void AdapterOrchestrator::initialize()
 void AdapterOrchestrator::initializeStateMachine()
 {
     StateData* allStates[] = {
-        &(doorLockedState = StateData(DOOR_LOCKED, "LOCKED")),
-        &(unlockDoorState = StateData(UNLOCK_DOOR, "UNLOCKING")),
-        &(doorUnlockedState = StateData(DOOR_UNLOCKED, "UNLOCKED")),
-        &(lockDoorState = StateData(LOCK_DOOR, "LOCKING")),
-        &(initializingState = StateData(INITIALIZING, "INITIALIZING"))};
+        &(doorLockedState = StateData(AdapterStates::DOOR_LOCKED, "LOCKED")),
+        &(unlockDoorState = StateData(AdapterStates::UNLOCK_DOOR, "UNLOCKING")),
+        &(doorUnlockedState = StateData(AdapterStates::DOOR_UNLOCKED, "UNLOCKED")),
+        &(lockDoorState = StateData(AdapterStates::LOCK_DOOR, "LOCKING")),
+        &(initializingState = StateData(AdapterStates::INITIALIZING, "INITIALIZING"))};
 
     StateData* doorLockedStateTransitions[] = {&unlockDoorState};
     doorLockedState.setAllowedTransitions(doorLockedStateTransitions, 1);

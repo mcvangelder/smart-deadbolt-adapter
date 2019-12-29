@@ -5,11 +5,7 @@
 #include <nfc-mifareclassic-spi.h>
 #include <statemachine.h>
 
-const uint8_t INITIALIZING = 0;
-const uint8_t LOCK_DOOR = 1;
-const uint8_t DOOR_LOCKED = 2;
-const uint8_t UNLOCK_DOOR = 3;
-const uint8_t DOOR_UNLOCKED = 4;
+enum AdapterStates : byte { INITIALIZING, LOCK_DOOR, DOOR_LOCKED, UNLOCK_DOOR, DOOR_UNLOCKED };
 
 const uint8_t MAX_UID_BYTES = 7;
 
