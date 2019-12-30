@@ -8,7 +8,6 @@ AdapterOrchestrator::AdapterOrchestrator(StateMachine *machine, NFCMiFareClassic
     m_nfcReader = nfcReader;
 
     EEPROM.get(0, validUID);
-    printHex(validUID, MAX_UID_BYTES);
 }
 
 void AdapterOrchestrator::initialize()
@@ -19,26 +18,26 @@ void AdapterOrchestrator::initialize()
 
 void AdapterOrchestrator::initializeStateMachine()
 {
-    StateData* allStates[] = {
+    StateData *allStates[] = {
         &(doorLockedState = StateData(AdapterStates::DOOR_LOCKED, "LOCKED")),
         &(unlockDoorState = StateData(AdapterStates::UNLOCK_DOOR, "UNLOCKING")),
         &(doorUnlockedState = StateData(AdapterStates::DOOR_UNLOCKED, "UNLOCKED")),
         &(lockDoorState = StateData(AdapterStates::LOCK_DOOR, "LOCKING")),
         &(initializingState = StateData(AdapterStates::INITIALIZING, "INITIALIZING"))};
 
-    StateData* doorLockedStateTransitions[] = {&unlockDoorState};
+    StateData *doorLockedStateTransitions[] = {&unlockDoorState};
     doorLockedState.setAllowedTransitions(doorLockedStateTransitions, 1);
 
-    StateData* unlockDoorStateTransistions[] = {&doorUnlockedState};
+    StateData *unlockDoorStateTransistions[] = {&doorUnlockedState};
     unlockDoorState.setAllowedTransitions(unlockDoorStateTransistions, 1);
 
-    StateData* doorUnlockedStateTranistions[] = {&lockDoorState};
+    StateData *doorUnlockedStateTranistions[] = {&lockDoorState};
     doorUnlockedState.setAllowedTransitions(doorUnlockedStateTranistions, 1);
 
-    StateData* lockDoorStateTransitions[] = {&doorLockedState};
+    StateData *lockDoorStateTransitions[] = {&doorLockedState};
     lockDoorState.setAllowedTransitions(lockDoorStateTransitions, 1);
 
-    StateData* initializingStateTransitions[] = {&doorLockedState, &doorUnlockedState};
+    StateData *initializingStateTransitions[] = {&doorLockedState, &doorUnlockedState};
     initializingState.setAllowedTransitions(initializingStateTransitions, 2);
 
     m_stateMachine->initialize(allStates, 5, initializingState);
@@ -60,24 +59,23 @@ void AdapterOrchestrator::run()
     {
         digitalWrite(LOCKED_LED, HIGH);
         auto success = m_nfcReader->read(readStatus);
-        Serial.println("Read Success!!!");
         if (success)
         {
-            Serial.println("Access Granted");
+            Serial.println("Read Success!!!");
             digitalWrite(BUZZER_PIN, HIGH);
             if (isSavedUID(readStatus.uidRaw, readStatus.uidLength))
             {
-                Serial.println("Unlocking Door");
+                Serial.println("Access Granted");
                 m_stateMachine->transitionTo(UNLOCK_DOOR);
             }
-            m_stateMachine->transitionTo(UNLOCK_DOOR);
+            else
+            {
+                Serial.println("Access Denied");
+            }
             delay(250);
-            digitalWrite(BUZZER_PIN, LOW); 
+            digitalWrite(BUZZER_PIN, LOW);
         }
-        else
-        {
-            Serial.println("Access Denied");
-        }
+
         break;
     }
     case UNLOCK_DOOR:
@@ -121,6 +119,11 @@ void AdapterOrchestrator::onStateChanged(StateData *oldState, StateData *newStat
 bool AdapterOrchestrator::isSavedUID(uint8_t *uid, uint8_t length)
 {
     bool isSavedUID = false;
+
+    Serial.print("Comparing : ");
+    printHex(uid, length);
+    Serial.print("To : ");
+    printHex(validUID, MAX_UID_BYTES);
 
     if (length > 0 && length <= MAX_UID_BYTES)
     {
