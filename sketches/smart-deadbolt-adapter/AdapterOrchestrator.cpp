@@ -6,6 +6,9 @@ AdapterOrchestrator::AdapterOrchestrator(StateMachine *machine, NFCMiFareClassic
 {
     m_stateMachine = machine;
     m_nfcReader = nfcReader;
+
+    EEPROM.get(0, validUID);
+    printHex(validUID, MAX_UID_BYTES);
 }
 
 void AdapterOrchestrator::initialize()
@@ -116,17 +119,13 @@ bool AdapterOrchestrator::isSavedUID(uint8_t *uid, uint8_t length)
 
     if (length > 0 && length <= MAX_UID_BYTES)
     {
-        EEPROM.get(0, storedValue);
-
-        printHex(storedValue, 7);
-
         auto offset = MAX_UID_BYTES - length;
         auto i = 0;
         auto j = offset;
-        isSavedUID = (uid[i++] == storedValue[j++]);
+        isSavedUID = (uid[i++] == validUID[j++]);
         while (j < MAX_UID_BYTES && isSavedUID)
         {
-            isSavedUID &= (uid[i++] == storedValue[j++]);
+            isSavedUID &= (uid[i++] == validUID[j++]);
         }
     }
 

@@ -26,7 +26,7 @@ private:
     StateMachine *m_stateMachine;
     NFCMiFareClassicSpi *m_nfcReader;
     StateData doorLockedState, unlockDoorState, doorUnlockedState, lockDoorState, initializingState;
-    uint8_t storedValue[MAX_UID_BYTES] = {0, 0, 0, 0, 0, 0, 0};
+    uint8_t validUID[MAX_UID_BYTES] = {0, 0, 0, 0, 0, 0, 0};
     ReadStatus readStatus;
 
     void initializeStateMachine();
