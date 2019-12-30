@@ -56,8 +56,8 @@ void AdapterOrchestrator::run()
     case DOOR_LOCKED:
     {
         digitalWrite(LOCKED_LED, HIGH);
-        auto readStatus = readCard();
-        if (readStatus.success)
+        auto success = m_nfcReader->read(readStatus);
+        if (success)
         {
             digitalWrite(BUZZER_PIN, HIGH);
             Serial.println("Read Success!!!");
@@ -68,7 +68,7 @@ void AdapterOrchestrator::run()
             }
             m_stateMachine->transitionTo(UNLOCK_DOOR);
             delay(500);
-            digitalWrite(BUZZER_PIN, LOW);
+            digitalWrite(BUZZER_PIN, LOW); 
         }
         break;
     }
@@ -107,12 +107,6 @@ void AdapterOrchestrator::onStateChanged(StateData *oldState, StateData *newStat
 
     Serial.print("New State: ");
     Serial.println(newState->getName());
-}
-
-ReadStatus AdapterOrchestrator::readCard()
-{
-    auto status = m_nfcReader->read();
-    return status;
 }
 
 // All UIDs are saved in fixed width of MAX_UID_BYTES

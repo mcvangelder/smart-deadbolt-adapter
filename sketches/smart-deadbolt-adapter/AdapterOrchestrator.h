@@ -27,9 +27,9 @@ private:
     NFCMiFareClassicSpi *m_nfcReader;
     StateData doorLockedState, unlockDoorState, doorUnlockedState, lockDoorState, initializingState;
     uint8_t storedValue[MAX_UID_BYTES] = {0, 0, 0, 0, 0, 0, 0};
+    ReadStatus readStatus;
 
     void initializeStateMachine();
-    ReadStatus readCard();
     bool isSavedUID(uint8_t *uid, uint8_t uidLength);
 
     static void onStateChanged(StateData *oldState, StateData *newState);
