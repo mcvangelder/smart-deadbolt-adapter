@@ -60,18 +60,23 @@ void AdapterOrchestrator::run()
     {
         digitalWrite(LOCKED_LED, HIGH);
         auto success = m_nfcReader->read(readStatus);
+        Serial.println("Read Success!!!");
         if (success)
         {
+            Serial.println("Access Granted");
             digitalWrite(BUZZER_PIN, HIGH);
-            Serial.println("Read Success!!!");
             if (isSavedUID(readStatus.uidRaw, readStatus.uidLength))
             {
                 Serial.println("Unlocking Door");
                 m_stateMachine->transitionTo(UNLOCK_DOOR);
             }
             m_stateMachine->transitionTo(UNLOCK_DOOR);
-            delay(500);
+            delay(250);
             digitalWrite(BUZZER_PIN, LOW); 
+        }
+        else
+        {
+            Serial.println("Access Denied");
         }
         break;
     }
