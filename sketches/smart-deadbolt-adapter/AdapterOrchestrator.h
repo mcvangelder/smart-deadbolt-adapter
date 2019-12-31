@@ -7,16 +7,17 @@
 
 const uint8_t MAX_UID_BYTES = 7;
 
+const uint8_t NUM_ADAPTER_STATES = 6;
 
 class AdapterOrchestrator : public virtual StateChangedListener
 {
 public:
-    // These enum values correlate 1 to 1 to indexes in eventHandlers
     enum AdapterStates : byte
     {
         INITIALIZING,
         LOCK_DOOR,
         DOOR_LOCKED,
+        READ_CARD,
         UNLOCK_DOOR,
         DOOR_UNLOCKED
     };
@@ -27,6 +28,7 @@ public:
         void (*initializationHandler)(),
         void (*lockDoorHandler)(),
         void (*doorLockedHandler)(),
+        void (*readCardHandler)(),
         void (*unlockDoorHandler)(),
         void (*doorUnlockedHandler)()
     );
@@ -40,7 +42,7 @@ private:
     uint8_t validUID[MAX_UID_BYTES] = {0, 0, 0, 0, 0, 0, 0};
     ReadStatus readStatus;
     // These indexes correlate 1 to 1 to the AdapterStates enum values
-    void (*eventHandlers[6])() = {};
+    void (*eventHandlers[NUM_ADAPTER_STATES])() = {};
 
     void onStateChanged(StateData *oldState, StateData *newState);
     void initializeStateMachine();

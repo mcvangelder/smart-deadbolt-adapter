@@ -23,7 +23,7 @@ void setup()
     pinMode(UNLOCKED_LED, OUTPUT);
 
     digitalWrite(UNLOCKED_LED, HIGH);
-    orchestrator.initialize(&initializationHandler, &lockDoorHandler, &doorLockedHandler, &unlockDoorHandler, &doorUnlockedHandler);
+    orchestrator.initialize(&initializationHandler, &lockDoorHandler, &doorLockedHandler, &readCardHandler, &unlockDoorHandler, &doorUnlockedHandler);
     digitalWrite(LOCKED_LED, HIGH);
     delay(500);
 }
@@ -54,13 +54,22 @@ void lockDoorHandler()
 void doorLockedHandler()
 {
     digitalWrite(LOCKED_LED, HIGH);
+    orchestrator.goToState(AdapterOrchestrator::AdapterStates::READ_CARD);
+}
+
+void readCardHandler(){
     auto success = orchestrator.readNextCard();
+    digitalWrite(BUZZER_PIN, HIGH);
+    digitalWrite(LOCKED_LED, LOW);
+    delay(250);
+    digitalWrite(BUZZER_PIN, LOW);
     if (success)
     {
-        digitalWrite(BUZZER_PIN, HIGH);
-        delay(250);
-        digitalWrite(BUZZER_PIN, LOW);
         orchestrator.goToState(AdapterOrchestrator::AdapterStates::UNLOCK_DOOR);
+    }
+    else 
+    {
+        orchestrator.goToState(AdapterOrchestrator::AdapterStates::DOOR_LOCKED);
     }
 }
 

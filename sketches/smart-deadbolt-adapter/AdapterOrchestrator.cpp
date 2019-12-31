@@ -14,17 +14,20 @@ void AdapterOrchestrator::initialize(
     void (*initializationHandler)(),
     void (*lockDoorHandler)(),
     void (*doorLockedHandler)(),
+    void (*readCardHandler)(),
     void (*unlockDoorHandler)(),
     void (*doorUnlockedHandler)())
 {
     eventHandlers[AdapterOrchestrator::AdapterStates::INITIALIZING] = initializationHandler;
     eventHandlers[AdapterOrchestrator::AdapterStates::LOCK_DOOR] = lockDoorHandler;
     eventHandlers[AdapterOrchestrator::AdapterStates::DOOR_LOCKED] = doorLockedHandler;
+    eventHandlers[AdapterOrchestrator::AdapterStates::READ_CARD] = readCardHandler;
     eventHandlers[AdapterOrchestrator::AdapterStates::UNLOCK_DOOR] = unlockDoorHandler;
     eventHandlers[AdapterOrchestrator::AdapterStates::DOOR_UNLOCKED] = doorUnlockedHandler;
 
     m_nfcReader->initialize();
     initializeStateMachine();
+    Serial.print("Initialization complete. Current State: "); Serial.println(m_stateMachine.getCurrentStateName());
 }
 
 void AdapterOrchestrator::run()
@@ -57,16 +60,17 @@ bool AdapterOrchestrator::readNextCard()
 
 void AdapterOrchestrator::initializeStateMachine()
 {
-    StateData doorLockedState, unlockDoorState, doorUnlockedState, lockDoorState, initializingState;
+    StateData doorLockedState, unlockDoorState, doorUnlockedState, lockDoorState, readCardState, initializingState;
 
     StateData *allStates[] = {
         &(doorLockedState = StateData(AdapterStates::DOOR_LOCKED, "LOCKED")),
         &(unlockDoorState = StateData(AdapterStates::UNLOCK_DOOR, "UNLOCKING")),
         &(doorUnlockedState = StateData(AdapterStates::DOOR_UNLOCKED, "UNLOCKED")),
         &(lockDoorState = StateData(AdapterStates::LOCK_DOOR, "LOCKING")),
+        &(readCardState = StateData(AdapterStates::READ_CARD, "WAITING ON CARD")),
         &(initializingState = StateData(AdapterStates::INITIALIZING, "INITIALIZING"))};
 
-    StateData *doorLockedStateTransitions[] = {&unlockDoorState};
+    StateData *doorLockedStateTransitions[] = {&readCardState};
     doorLockedState.setAllowedTransitions(doorLockedStateTransitions, 1);
 
     StateData *unlockDoorStateTransistions[] = {&doorUnlockedState};
@@ -78,10 +82,13 @@ void AdapterOrchestrator::initializeStateMachine()
     StateData *lockDoorStateTransitions[] = {&doorLockedState};
     lockDoorState.setAllowedTransitions(lockDoorStateTransitions, 1);
 
+    StateData *readCardStateTransitions[] = {&doorLockedState, &unlockDoorState};
+    readCardState.setAllowedTransitions(readCardStateTransitions, 2);
+
     StateData *initializingStateTransitions[] = {&doorLockedState, &doorUnlockedState};
     initializingState.setAllowedTransitions(initializingStateTransitions, 2);
 
-    m_stateMachine.initialize(allStates, 5, initializingState);
+    m_stateMachine.initialize(allStates, NUM_ADAPTER_STATES, initializingState);
     m_stateMachine.setOnStateChangedListener(dynamic_cast<StateChangedListener *>(this));
 }
 
