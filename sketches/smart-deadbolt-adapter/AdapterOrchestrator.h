@@ -2,37 +2,50 @@
 #define AdapterOrchestrator_H
 
 #include <EEPROM.h>
-#include <nfc-mifareclassic-spi.h>
+#include <nfc-mifarereader-i2c.h>
 #include <statemachine.h>
-
-enum AdapterStates : byte { INITIALIZING, LOCK_DOOR, DOOR_LOCKED, UNLOCK_DOOR, DOOR_UNLOCKED };
 
 const uint8_t MAX_UID_BYTES = 7;
 
-#define BUTTON_PIN (8)
-#define BUZZER_PIN (6)
-#define UNLOCKED_LED (7)
-#define LOCKED_LED LED_BUILTIN
 
-class AdapterOrchestrator
+class AdapterOrchestrator : public virtual StateChangedListener
 {
 public:
-    AdapterOrchestrator(StateMachine *stateMachine, NFCMiFareClassicSpi *nfcReader);
+    // These enum values correlate 1 to 1 to indexes in eventHandlers
+    enum AdapterStates : byte
+    {
+        INITIALIZING,
+        LOCK_DOOR,
+        DOOR_LOCKED,
+        UNLOCK_DOOR,
+        DOOR_UNLOCKED
+    };
+
+    AdapterOrchestrator(NFCMiFareReader *nfcReader);
     AdapterOrchestrator() {}
-    void initialize();
+    void initialize(
+        void (*initializationHandler)(),
+        void (*lockDoorHandler)(),
+        void (*doorLockedHandler)(),
+        void (*unlockDoorHandler)(),
+        void (*doorUnlockedHandler)()
+    );
     void run();
+    void goToState(AdapterOrchestrator::AdapterStates nextState);
+    bool readNextCard();
 
 private:
-    StateMachine *m_stateMachine;
-    NFCMiFareClassicSpi *m_nfcReader;
-    StateData doorLockedState, unlockDoorState, doorUnlockedState, lockDoorState, initializingState;
+    StateMachine m_stateMachine;
+    NFCMiFareReader *m_nfcReader;
     uint8_t validUID[MAX_UID_BYTES] = {0, 0, 0, 0, 0, 0, 0};
     ReadStatus readStatus;
+    // These indexes correlate 1 to 1 to the AdapterStates enum values
+    void (*eventHandlers[6])() = {};
 
+    void onStateChanged(StateData *oldState, StateData *newState);
     void initializeStateMachine();
     bool isSavedUID(uint8_t *uid, uint8_t uidLength);
 
-    static void onStateChanged(StateData *oldState, StateData *newState);
     static void printHex(uint8_t *values, uint8_t length);
 };
 #endif
