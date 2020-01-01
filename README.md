@@ -5,7 +5,7 @@ The device is built on Arduino platform and uses the Adafruit PN532 chip to read
 
 Dependencies |
 ------------ |
-[NFC Mifare Classic SPI](https://github.com/mcvangelder/arduino-libraries/tree/develop/NFC-MiFareClassic-Spi)|
+[NFC MiFare Reader](https://github.com/mcvangelder/arduino-libraries/tree/develop/NFC-MiFareReader)|
 [State Machine](https://github.com/mcvangelder/arduino-libraries/tree/develop/StateMachine)|
 
 [Installing libraries for Arduino](http://www.arduino.cc/en/Guide/Libraries)
