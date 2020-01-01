@@ -7,7 +7,7 @@
 
 const uint8_t MAX_UID_BYTES = 7;
 
-const uint8_t NUM_ADAPTER_STATES = 6;
+const uint8_t NUM_ADAPTER_STATES = 7;
 
 class AdapterOrchestrator : public virtual StateChangedListener
 {
@@ -19,7 +19,8 @@ public:
         DOOR_LOCKED,
         READ_CARD,
         UNLOCK_DOOR,
-        DOOR_UNLOCKED
+        DOOR_UNLOCKED,
+        UNSET = 255
     };
 
     AdapterOrchestrator(NFCMiFareReader *nfcReader);
@@ -32,9 +33,11 @@ public:
         void (*unlockDoorHandler)(),
         void (*doorUnlockedHandler)()
     );
-    void run();
+    void run(AdapterStates goToState);
     void goToState(AdapterOrchestrator::AdapterStates nextState);
-    bool readNextCard();
+    bool readCard();
+    void activateCardReader(void (*cardReadHandler)());
+    void cardDetected();
 
 private:
     StateMachine m_stateMachine;

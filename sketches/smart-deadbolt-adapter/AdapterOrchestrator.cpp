@@ -30,12 +30,9 @@ void AdapterOrchestrator::initialize(
     Serial.print("Initialization complete. Current State: "); Serial.println(m_stateMachine.getCurrentStateName());
 }
 
-void AdapterOrchestrator::run()
+void AdapterOrchestrator::run(AdapterOrchestrator::AdapterStates goToState)
 {
-    if (m_stateMachine.getCurrentStateValue() == AdapterOrchestrator::AdapterStates::INITIALIZING)
-    {
-        (eventHandlers[AdapterOrchestrator::AdapterStates::INITIALIZING])();
-    }
+    m_stateMachine.transitionTo(goToState);
 }
 
 void AdapterOrchestrator::goToState(AdapterOrchestrator::AdapterStates nextState)
@@ -43,24 +40,29 @@ void AdapterOrchestrator::goToState(AdapterOrchestrator::AdapterStates nextState
     m_stateMachine.transitionTo(nextState);
 }
 
-bool AdapterOrchestrator::readNextCard()
+bool AdapterOrchestrator::readCard()
 {
     auto success = m_nfcReader->read(readStatus);
-    if (success && isSavedUID(readStatus.uidRaw, readStatus.uidLength))
+    bool hasAccess = success && isSavedUID(readStatus.uidRaw, readStatus.uidLength);
+    return hasAccess;
+}
+
+void AdapterOrchestrator::activateCardReader(void (*cardReadHandler)())
+{
+    if (m_nfcReader->activateCardReader())
     {
-        Serial.println("Access Granted");
-        return true;
+        attachInterrupt(0, cardReadHandler, LOW);
     }
-    else
-    {
-        Serial.print("Access Denied -->");Serial.println(success ? "Successful Read" : "Failed Read");
-    }
-    return false;
+}
+
+void AdapterOrchestrator::cardDetected()
+{
+    detachInterrupt(0);
 }
 
 void AdapterOrchestrator::initializeStateMachine()
 {
-    StateData doorLockedState, unlockDoorState, doorUnlockedState, lockDoorState, readCardState, initializingState;
+    StateData doorLockedState, unlockDoorState, doorUnlockedState, lockDoorState, readCardState, initializingState, unsetState;
 
     StateData *allStates[] = {
         &(doorLockedState = StateData(AdapterStates::DOOR_LOCKED, "LOCKED")),
@@ -68,7 +70,8 @@ void AdapterOrchestrator::initializeStateMachine()
         &(doorUnlockedState = StateData(AdapterStates::DOOR_UNLOCKED, "UNLOCKED")),
         &(lockDoorState = StateData(AdapterStates::LOCK_DOOR, "LOCKING")),
         &(readCardState = StateData(AdapterStates::READ_CARD, "WAITING ON CARD")),
-        &(initializingState = StateData(AdapterStates::INITIALIZING, "INITIALIZING"))};
+        &(initializingState = StateData(AdapterStates::INITIALIZING, "INITIALIZING")),
+        &(unsetState = StateData(AdapterStates::UNSET, "UNSET"))};
 
     StateData *doorLockedStateTransitions[] = {&readCardState};
     doorLockedState.setAllowedTransitions(doorLockedStateTransitions, 1);
@@ -88,7 +91,10 @@ void AdapterOrchestrator::initializeStateMachine()
     StateData *initializingStateTransitions[] = {&doorLockedState, &doorUnlockedState};
     initializingState.setAllowedTransitions(initializingStateTransitions, 2);
 
-    m_stateMachine.initialize(allStates, NUM_ADAPTER_STATES, initializingState);
+    StateData *unsetStateTransitions[] = {&initializingState};
+    unsetState.setAllowedTransitions(unsetStateTransitions, 1);
+
+    m_stateMachine.initialize(allStates, NUM_ADAPTER_STATES, unsetState);
     m_stateMachine.setOnStateChangedListener(dynamic_cast<StateChangedListener *>(this));
 }
 
@@ -124,6 +130,7 @@ void AdapterOrchestrator::onStateChanged(StateData *oldState, StateData *newStat
 
     Serial.print("New State: ");
     Serial.println(newState->getName());
+
     auto evntHandlrIndex = newState->getValue() - 1;
     if (evntHandlrIndex < 7)
     {

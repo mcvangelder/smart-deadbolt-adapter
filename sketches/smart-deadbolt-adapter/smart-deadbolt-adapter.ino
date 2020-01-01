@@ -7,6 +7,7 @@
 
 auto nfcReader = NFCMiFareReaderI2C();
 auto orchestrator = AdapterOrchestrator(&nfcReader);
+volatile AdapterOrchestrator::AdapterStates nextState = AdapterOrchestrator::AdapterStates::INITIALIZING;
 
 void setup()
 {
@@ -30,7 +31,11 @@ void setup()
 
 void loop()
 {
-    orchestrator.run();
+    orchestrator.run(nextState);
+    if (nextState != AdapterOrchestrator::AdapterStates::UNSET)
+    {
+        nextState = AdapterOrchestrator::AdapterStates::UNSET;
+    }
 }
 
 void initializationHandler()
@@ -54,11 +59,20 @@ void lockDoorHandler()
 void doorLockedHandler()
 {
     digitalWrite(LOCKED_LED, HIGH);
-    orchestrator.goToState(AdapterOrchestrator::AdapterStates::READ_CARD);
+    orchestrator.activateCardReader(cardDetected);
+    Serial.println("Waiting for card detection");
 }
 
-void readCardHandler(){
-    auto success = orchestrator.readNextCard();
+void cardDetected()
+{
+    Serial.println("Card Deteced");
+    nextState = AdapterOrchestrator::AdapterStates::READ_CARD;
+    orchestrator.cardDetected();
+}
+
+void readCardHandler()
+{
+    auto success = orchestrator.readCard();
     digitalWrite(BUZZER_PIN, HIGH);
     digitalWrite(LOCKED_LED, LOW);
     delay(250);
@@ -67,7 +81,7 @@ void readCardHandler(){
     {
         orchestrator.goToState(AdapterOrchestrator::AdapterStates::UNLOCK_DOOR);
     }
-    else 
+    else
     {
         orchestrator.goToState(AdapterOrchestrator::AdapterStates::DOOR_LOCKED);
     }
