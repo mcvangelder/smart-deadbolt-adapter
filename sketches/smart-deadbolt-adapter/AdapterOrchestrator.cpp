@@ -33,18 +33,6 @@ void AdapterOrchestrator::initialize(
 #endif
 }
 
-void AdapterOrchestrator::run(AdapterOrchestrator::AdapterStates goToState)
-{
-
-#ifdef ADPT_ORCSTR_DEBUG
-    Serial.println("AdapterOrchestrator::run: BEGIN");
-#endif
-    m_stateMachine.transitionTo(goToState);
-#ifdef ADPT_ORCSTR_DEBUG
-    Serial.println("AdapterOrchestrator::run: END");
-#endif
-}
-
 void AdapterOrchestrator::goToState(AdapterOrchestrator::AdapterStates nextState)
 {
     m_stateMachine.transitionTo(nextState);

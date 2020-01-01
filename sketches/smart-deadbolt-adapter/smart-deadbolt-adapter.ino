@@ -31,9 +31,9 @@ void setup()
 
 void loop()
 {
-    orchestrator.run(nextState);
     if (nextState != AdapterOrchestrator::AdapterStates::UNSET)
     {
+        orchestrator.goToState(nextState);
         nextState = AdapterOrchestrator::AdapterStates::UNSET;
     }
 }

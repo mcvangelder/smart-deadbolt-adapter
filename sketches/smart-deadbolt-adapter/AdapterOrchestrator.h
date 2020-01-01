@@ -5,7 +5,7 @@
 #include <nfc-mifarereader-i2c.h>
 #include <statemachine.h>
 
-// #define ADPT_ORCSTR_DEBUG
+#define ADPT_ORCSTR_DEBUG
 
 const uint8_t MAX_UID_BYTES = 7;
 
@@ -35,7 +35,6 @@ public:
         void (*unlockDoorHandler)(),
         void (*doorUnlockedHandler)()
     );
-    void run(AdapterStates goToState);
     void goToState(AdapterOrchestrator::AdapterStates nextState);
     bool readCard();
     void activateCardReader(void (*cardReadHandler)());
