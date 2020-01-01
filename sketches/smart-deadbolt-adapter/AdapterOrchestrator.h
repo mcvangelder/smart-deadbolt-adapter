@@ -5,6 +5,8 @@
 #include <nfc-mifarereader-i2c.h>
 #include <statemachine.h>
 
+// #define ADPT_ORCSTR_DEBUG
+
 const uint8_t MAX_UID_BYTES = 7;
 
 const uint8_t NUM_ADAPTER_STATES = 7;

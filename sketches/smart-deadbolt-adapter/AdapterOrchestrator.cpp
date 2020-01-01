@@ -27,12 +27,22 @@ void AdapterOrchestrator::initialize(
 
     m_nfcReader->initialize();
     initializeStateMachine();
-    Serial.print("Initialization complete. Current State: "); Serial.println(m_stateMachine.getCurrentStateName());
+#ifdef ADPT_ORCSTR_DEBUG
+    Serial.print("Initialization complete. Current State: ");
+    Serial.println(m_stateMachine.getCurrentStateName());
+#endif
 }
 
 void AdapterOrchestrator::run(AdapterOrchestrator::AdapterStates goToState)
 {
+
+#ifdef ADPT_ORCSTR_DEBUG
+    Serial.println("AdapterOrchestrator::run: BEGIN");
+#endif
     m_stateMachine.transitionTo(goToState);
+#ifdef ADPT_ORCSTR_DEBUG
+    Serial.println("AdapterOrchestrator::run: END");
+#endif
 }
 
 void AdapterOrchestrator::goToState(AdapterOrchestrator::AdapterStates nextState)
@@ -44,6 +54,10 @@ bool AdapterOrchestrator::readCard()
 {
     auto success = m_nfcReader->read(readStatus);
     bool hasAccess = success && isSavedUID(readStatus.uidRaw, readStatus.uidLength);
+#ifdef ADPT_ORCSTR_DEBUG
+        Serial.println(success ? "Successful Read" : "Failed Read");
+        Serial.print("Access ");Serial.println(hasAccess ? "Granted" : "Declined");
+#endif
     return hasAccess;
 }
 
@@ -103,10 +117,12 @@ bool AdapterOrchestrator::isSavedUID(uint8_t *uid, uint8_t length)
 {
     bool isSavedUID = false;
 
+#ifdef ADPT_ORCSTR_DEBUG
     Serial.print("Comparing : ");
     printHex(uid, length);
     Serial.print("To : ");
     printHex(validUID, MAX_UID_BYTES);
+#endif
 
     if (length > 0 && length <= MAX_UID_BYTES)
     {
@@ -125,11 +141,13 @@ bool AdapterOrchestrator::isSavedUID(uint8_t *uid, uint8_t length)
 
 void AdapterOrchestrator::onStateChanged(StateData *oldState, StateData *newState)
 {
+#ifdef ADPT_ORCSTR_DEBUG
     Serial.print("Old State: ");
     Serial.println(oldState->getName());
 
     Serial.print("New State: ");
     Serial.println(newState->getName());
+#endif
 
     auto evntHandlrIndex = newState->getValue() - 1;
     if (evntHandlrIndex < 7)
