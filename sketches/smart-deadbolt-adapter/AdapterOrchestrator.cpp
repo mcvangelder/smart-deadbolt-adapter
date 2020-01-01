@@ -53,7 +53,7 @@ bool AdapterOrchestrator::readNextCard()
     }
     else
     {
-        Serial.println("Access Denied");
+        Serial.print("Access Denied -->");Serial.println(success ? "Successful Read" : "Failed Read");
     }
     return false;
 }
