@@ -65,7 +65,7 @@ void doorLockedHandler()
 
 void cardDetected()
 {
-    Serial.println("Card Deteced");
+    Serial.println("Card Detected");
     nextState = AdapterOrchestrator::AdapterStates::READ_CARD;
     orchestrator.cardDetected();
 }
