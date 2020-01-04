@@ -4,13 +4,11 @@
 #define UNLOCKED_LED (7)
 #define LOCKED_LED LED_BUILTIN
 #define TOGGLE_LOCK_BUTTON (3)
-#define CARDREADER_INTRPT  (0)
-#define TOGGLE_BUTTON_INTRPT (1)
 #define IRQ_PIN PN532_IRQ
 #define RESET_PIN (5)
 
 auto nfcReader = NFCMiFareReaderI2C(IRQ_PIN, RESET_PIN);
-auto orchestrator = AdapterOrchestrator(&nfcReader, CARDREADER_INTRPT, TOGGLE_BUTTON_INTRPT);
+auto orchestrator = AdapterOrchestrator(&nfcReader, digitalPinToInterrupt(IRQ_PIN), digitalPinToInterrupt(TOGGLE_LOCK_BUTTON));
 volatile AdapterOrchestrator::AdapterStates nextState = AdapterOrchestrator::AdapterStates::INITIALIZING;
 
 void setup()
