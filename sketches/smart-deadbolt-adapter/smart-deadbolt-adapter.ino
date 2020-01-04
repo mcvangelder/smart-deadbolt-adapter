@@ -100,6 +100,9 @@ void unlockDoorHandler()
 void doorUnlockedHandler()
 {
     digitalWrite(UNLOCKED_LED, HIGH);
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(1000);
+    digitalWrite(BUZZER_PIN, LOW);
 }
 
 void toggleButtonHandler()
