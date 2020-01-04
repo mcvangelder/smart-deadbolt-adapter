@@ -27,7 +27,7 @@ void AdapterOrchestrator::initialize(
 
     m_nfcReader->initialize();
     initializeStateMachine();
-    registerInterrupt(m_toggleLockInterrupt, toggleLockHandler, HIGH);
+    registerInterrupt(m_toggleLockInterrupt, toggleLockHandler, FALLING);
 #ifdef ADPT_ORCSTR_DEBUG
     Serial.print("Initialization complete. Current State: ");
     Serial.println(m_stateMachine.getCurrentStateName());

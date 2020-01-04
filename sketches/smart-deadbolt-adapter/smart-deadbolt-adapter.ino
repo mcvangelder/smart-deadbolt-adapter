@@ -21,7 +21,7 @@ void setup()
     Serial.println("Hello!");
 
     pinMode(LOCKED_LED, OUTPUT);
-    pinMode(TOGGLE_LOCK_BUTTON, INPUT);
+    pinMode(TOGGLE_LOCK_BUTTON, INPUT_PULLUP); // Force the button press to go low
     pinMode(BUZZER_PIN, OUTPUT);
     pinMode(UNLOCKED_LED, OUTPUT);
 
@@ -107,12 +107,9 @@ void doorUnlockedHandler()
 
 void toggleButtonHandler()
 {
-    // Arduino Uno doesn't support detecting "HIGH" mode
-    // therefore must check if the interrupt was fired specifically due to being isPressed
-    // ignoring the button release event
-    auto isPressed = digitalRead(TOGGLE_LOCK_BUTTON);
-    if(isPressed)
+    if(nextState == AdapterOrchestrator::AdapterStates::UNSET);
     {
+        Serial.println("Button released");
         nextState = orchestrator.getNextToggleState();
     }
 }
