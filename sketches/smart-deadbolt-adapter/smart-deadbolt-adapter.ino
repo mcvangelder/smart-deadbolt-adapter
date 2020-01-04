@@ -1,12 +1,16 @@
 #include "AdapterOrchestrator.h"
 
-#define BUTTON_PIN (8)
 #define BUZZER_PIN (6)
 #define UNLOCKED_LED (7)
 #define LOCKED_LED LED_BUILTIN
+#define TOGGLE_LOCK_BUTTON (3)
+#define CARDREADER_INTRPT  (0)
+#define TOGGLE_BUTTON_INTRPT (1)
+#define IRQ_PIN PN532_IRQ
+#define RESET_PIN (5)
 
-auto nfcReader = NFCMiFareReaderI2C();
-auto orchestrator = AdapterOrchestrator(&nfcReader);
+auto nfcReader = NFCMiFareReaderI2C(IRQ_PIN, RESET_PIN);
+auto orchestrator = AdapterOrchestrator(&nfcReader, CARDREADER_INTRPT, TOGGLE_BUTTON_INTRPT);
 volatile AdapterOrchestrator::AdapterStates nextState = AdapterOrchestrator::AdapterStates::INITIALIZING;
 
 void setup()
@@ -19,12 +23,12 @@ void setup()
     Serial.println("Hello!");
 
     pinMode(LOCKED_LED, OUTPUT);
-    pinMode(BUTTON_PIN, INPUT);
+    pinMode(TOGGLE_LOCK_BUTTON, INPUT);
     pinMode(BUZZER_PIN, OUTPUT);
     pinMode(UNLOCKED_LED, OUTPUT);
 
     digitalWrite(UNLOCKED_LED, HIGH);
-    orchestrator.initialize(&initializationHandler, &lockDoorHandler, &doorLockedHandler, &readCardHandler, &unlockDoorHandler, &doorUnlockedHandler);
+    orchestrator.initialize(&initializationHandler, &lockDoorHandler, &doorLockedHandler, &readCardHandler, &unlockDoorHandler, &doorUnlockedHandler, &toggleButtonHandler);
     digitalWrite(LOCKED_LED, HIGH);
     delay(500);
 }
@@ -98,8 +102,16 @@ void unlockDoorHandler()
 void doorUnlockedHandler()
 {
     digitalWrite(UNLOCKED_LED, HIGH);
-    // for prototyping purposes, delaying 1 sec, then automatically resetting back to the locked state
-    // final device implementation will require manual deadbolt manipulation (or button press to actuate the deadbolt)
-    delay(1000);
-    orchestrator.goToState(AdapterOrchestrator::AdapterStates::LOCK_DOOR);
+}
+
+void toggleButtonHandler()
+{
+    // Arduino Uno doesn't support detecting "HIGH" mode
+    // therefore must check if the interrupt was fired specifically due to being isPressed
+    // ignoring the button release event
+    auto isPressed = digitalRead(TOGGLE_LOCK_BUTTON);
+    if(isPressed)
+    {
+        nextState = orchestrator.getNextToggleState();
+    }
 }

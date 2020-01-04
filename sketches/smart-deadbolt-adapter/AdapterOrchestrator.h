@@ -5,7 +5,7 @@
 #include <nfc-mifarereader-i2c.h>
 #include <statemachine.h>
 
-#define ADPT_ORCSTR_DEBUG
+// #define ADPT_ORCSTR_DEBUG
 
 const uint8_t MAX_UID_BYTES = 7;
 
@@ -25,32 +25,40 @@ public:
         UNSET = 255
     };
 
-    AdapterOrchestrator(NFCMiFareReader *nfcReader);
-    AdapterOrchestrator() {}
+    AdapterOrchestrator(NFCMiFareReader *nfcReader, uint8_t readerInterrupt, uint8_t toggleLockInterrupt);
+    AdapterOrchestrator() {};
     void initialize(
         void (*initializationHandler)(),
         void (*lockDoorHandler)(),
         void (*doorLockedHandler)(),
         void (*readCardHandler)(),
         void (*unlockDoorHandler)(),
-        void (*doorUnlockedHandler)()
+        void (*doorUnlockedHandler)(),
+        void (*toggleButtonHandler)()
     );
     void goToState(AdapterOrchestrator::AdapterStates nextState);
     bool readCard();
     void activateCardReader(void (*cardReadHandler)());
     void cardDetected();
+    AdapterStates getNextToggleState();
 
 private:
     StateMachine m_stateMachine;
     NFCMiFareReader *m_nfcReader;
-    uint8_t validUID[MAX_UID_BYTES] = {0, 0, 0, 0, 0, 0, 0};
-    ReadStatus readStatus;
+    uint8_t m_readerInterrupt;
+    uint8_t m_toggleLockInterrupt;
+
+    uint8_t m_validUID[MAX_UID_BYTES] = {0, 0, 0, 0, 0, 0, 0};
+    ReadStatus m_readStatus;
     // These indexes correlate 1 to 1 to the AdapterStates enum values
     void (*eventHandlers[NUM_ADAPTER_STATES])() = {};
 
     void onStateChanged(StateData *oldState, StateData *newState);
     void initializeStateMachine();
     bool isSavedUID(uint8_t *uid, uint8_t uidLength);
+
+    void registerInterrupt(uint8_t intrpt, void (*callback)(), int mode);
+    void unregisterInterrupt(uint8_t intrpt);
 
     static void printHex(uint8_t *values, uint8_t length);
 };
