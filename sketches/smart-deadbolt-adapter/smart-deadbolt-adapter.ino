@@ -107,7 +107,7 @@ void doorUnlockedHandler()
 
 void toggleButtonHandler()
 {
-    if(nextState == AdapterOrchestrator::AdapterStates::UNSET);
+    if (nextState == AdapterOrchestrator::AdapterStates::UNSET)
     {
         Serial.println("Button released");
         nextState = orchestrator.getNextToggleState();
