@@ -8,7 +8,7 @@
 #define RESET_PIN (5)
 
 auto nfcReader = NFCMiFareReaderI2C(IRQ_PIN, RESET_PIN);
-auto orchestrator = AdapterOrchestrator(&nfcReader, digitalPinToInterrupt(IRQ_PIN), digitalPinToInterrupt(TOGGLE_LOCK_BUTTON));
+auto orchestrator = AdapterOrchestrator(&nfcReader);
 volatile AdapterOrchestrator::AdapterStates nextState = AdapterOrchestrator::AdapterStates::INITIALIZING;
 
 void setup()
@@ -26,7 +26,15 @@ void setup()
     pinMode(UNLOCKED_LED, OUTPUT);
 
     digitalWrite(UNLOCKED_LED, HIGH);
-    orchestrator.initialize(&initializationHandler, &lockDoorHandler, &doorLockedHandler, &readCardHandler, &unlockDoorHandler, &doorUnlockedHandler, &toggleButtonHandler);
+    orchestrator.initialize(
+        &initializationHandler,
+        &lockDoorHandler, 
+        &doorLockedHandler, 
+        &readCardHandler, 
+        &unlockDoorHandler, 
+        &doorUnlockedHandler, 
+        InterruptProxy(TOGGLE_LOCK_BUTTON, &toggleButtonHandler, FALLING),
+        InterruptProxy(IRQ_PIN, &cardDetected, LOW));
     digitalWrite(LOCKED_LED, HIGH);
     delay(500);
 }
@@ -61,7 +69,7 @@ void lockDoorHandler()
 void doorLockedHandler()
 {
     digitalWrite(LOCKED_LED, HIGH);
-    orchestrator.activateCardReader(cardDetected);
+    orchestrator.activateCardReader();
     Serial.println("Waiting for card detection");
 }
 

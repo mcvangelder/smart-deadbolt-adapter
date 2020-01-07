@@ -2,7 +2,7 @@
 #include <statemachine.h>
 #include <nfc-mifarereader.h>
 
-AdapterOrchestrator::AdapterOrchestrator(NFCMiFareReader *reader, uint8_t readerInterrupt, uint8_t toggleLockInterrupt) : m_nfcReader(reader), m_readerInterrupt(readerInterrupt), m_toggleLockInterrupt(toggleLockInterrupt)
+AdapterOrchestrator::AdapterOrchestrator(NFCMiFareReader *reader) : m_nfcReader(reader)
 {
     m_stateMachine = StateMachine();
 
@@ -16,7 +16,8 @@ void AdapterOrchestrator::initialize(
     void (*readCardHandler)(),
     void (*unlockDoorHandler)(),
     void (*doorUnlockedHandler)(),
-    void (*toggleLockHandler)())
+    InterruptProxy buttonInterrupt,
+    InterruptProxy readerInterrupt)
 {
     eventHandlers[AdapterOrchestrator::AdapterStates::INITIALIZING] = initializationHandler;
     eventHandlers[AdapterOrchestrator::AdapterStates::LOCK_DOOR] = lockDoorHandler;
@@ -27,7 +28,12 @@ void AdapterOrchestrator::initialize(
 
     m_nfcReader->initialize();
     initializeStateMachine();
-    registerInterrupt(m_toggleLockInterrupt, toggleLockHandler, FALLING);
+
+    toggleInterrupt = buttonInterrupt;
+    toggleInterrupt.enable();
+
+    cardInterrupt = readerInterrupt;
+
 #ifdef ADPT_ORCSTR_DEBUG
     Serial.print("Initialization complete. Current State: ");
     Serial.println(m_stateMachine.getCurrentStateName());
@@ -38,7 +44,10 @@ void AdapterOrchestrator::goToState(AdapterOrchestrator::AdapterStates nextState
 {
     auto transitioned = m_stateMachine.transitionTo(nextState);
 #ifdef ADPT_ORCSTR_DEBUG
-    Serial.print("Transitioned to: "); Serial.print(nextState); Serial.print("? "); Serial.println(transitioned ? "true" : "false");
+    Serial.print("Transitioned to: ");
+    Serial.print(nextState);
+    Serial.print("? ");
+    Serial.println(transitioned ? "true" : "false");
 #endif
 }
 
@@ -54,17 +63,18 @@ bool AdapterOrchestrator::readCard()
     return hasAccess;
 }
 
-void AdapterOrchestrator::activateCardReader(void (*cardReadHandler)())
+void AdapterOrchestrator::activateCardReader()
 {
+    cardInterrupt.disable();
     if (m_nfcReader->activateCardReader())
     {
-        registerInterrupt(m_readerInterrupt, cardReadHandler, LOW);
+        cardInterrupt.enable();
     }
 }
 
 void AdapterOrchestrator::cardDetected()
 {
-    unregisterInterrupt(m_readerInterrupt);
+    cardInterrupt.disable();
 }
 
 AdapterOrchestrator::AdapterStates AdapterOrchestrator::getNextToggleState()
@@ -72,7 +82,8 @@ AdapterOrchestrator::AdapterStates AdapterOrchestrator::getNextToggleState()
     auto state = m_stateMachine.getCurrentStateValue();
     auto nextState = AdapterStates::UNSET;
 #ifdef ADPT_ORCSTR_DEBUG
-    Serial.print("Current State: "); Serial.println(m_stateMachine.getCurrentStateName());
+    Serial.print("Current State: ");
+    Serial.println(m_stateMachine.getCurrentStateName());
 #endif
     switch (state)
     {
@@ -87,7 +98,8 @@ AdapterOrchestrator::AdapterStates AdapterOrchestrator::getNextToggleState()
     }
 
 #ifdef ADPT_ORCSTR_DEBUG
-    Serial.print("Next State Value: "); Serial.println(nextState);
+    Serial.print("Next State Value: ");
+    Serial.println(nextState);
 #endif
     return nextState;
 }
@@ -162,11 +174,15 @@ void AdapterOrchestrator::onStateChanged(StateData *oldState, StateData *newStat
 #ifdef ADPT_ORCSTR_DEBUG
     Serial.print("Old State: ");
     Serial.print(oldState->getName());
-    Serial.print(" ("); Serial.print(oldState->getValue()); Serial.println(")");
+    Serial.print(" (");
+    Serial.print(oldState->getValue());
+    Serial.println(")");
 
     Serial.print("New State: ");
     Serial.print(newState->getName());
-    Serial.print(" ("); Serial.print(newState->getValue()); Serial.println(")");
+    Serial.print(" (");
+    Serial.print(newState->getValue());
+    Serial.println(")");
 
 #endif
 
@@ -180,16 +196,6 @@ void AdapterOrchestrator::onStateChanged(StateData *oldState, StateData *newStat
     {
         (eventHandlers[AdapterOrchestrator::AdapterStates::INITIALIZING])();
     }
-}
-
-void AdapterOrchestrator::registerInterrupt(uint8_t intrpt, void(*callback)(), int mode)
-{
-    attachInterrupt(intrpt, callback, mode);
-}
-
-void AdapterOrchestrator::unregisterInterrupt(uint8_t intrpt)
-{
-    detachInterrupt(intrpt);
 }
 
 void AdapterOrchestrator::printHex(uint8_t *values, uint8_t length)
