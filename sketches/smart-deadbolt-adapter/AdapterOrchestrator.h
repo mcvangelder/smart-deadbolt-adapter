@@ -4,6 +4,7 @@
 #include <EEPROM.h>
 #include <nfc-mifarereader-i2c.h>
 #include <statemachine.h>
+#include "InterruptProxy.h"
 
 // #define ADPT_ORCSTR_DEBUG
 
@@ -25,7 +26,7 @@ public:
         UNSET = 255
     };
 
-    AdapterOrchestrator(NFCMiFareReader *nfcReader, uint8_t readerInterrupt, uint8_t toggleLockInterrupt);
+    AdapterOrchestrator(NFCMiFareReader *nfcReader);
     AdapterOrchestrator() {};
     void initialize(
         void (*initializationHandler)(),
@@ -34,19 +35,20 @@ public:
         void (*readCardHandler)(),
         void (*unlockDoorHandler)(),
         void (*doorUnlockedHandler)(),
-        void (*toggleButtonHandler)()
+        InterruptProxy buttonInterrupt,
+        InterruptProxy cardDetectedInterrupt
     );
     void goToState(AdapterOrchestrator::AdapterStates nextState);
     bool readCard();
-    void activateCardReader(void (*cardReadHandler)());
+    void activateCardReader();
     void cardDetected();
     AdapterStates getNextToggleState();
 
 private:
     StateMachine m_stateMachine;
     NFCMiFareReader *m_nfcReader;
-    uint8_t m_readerInterrupt;
-    uint8_t m_toggleLockInterrupt;
+    InterruptProxy toggleInterrupt;
+    InterruptProxy cardInterrupt;
 
     uint8_t m_validUID[MAX_UID_BYTES] = {0, 0, 0, 0, 0, 0, 0};
     ReadStatus m_readStatus;
@@ -56,9 +58,6 @@ private:
     void onStateChanged(StateData *oldState, StateData *newState);
     void initializeStateMachine();
     bool isSavedUID(uint8_t *uid, uint8_t uidLength);
-
-    void registerInterrupt(uint8_t intrpt, void (*callback)(), int mode);
-    void unregisterInterrupt(uint8_t intrpt);
 
     static void printHex(uint8_t *values, uint8_t length);
 };
